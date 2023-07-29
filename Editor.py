@@ -16,7 +16,8 @@ class Editor():
             'Grass' : Load_IMGS('tiles/grass'),
             'Stone' : Load_IMGS('tiles/stone'),
             'Large_decor' : Load_IMGS('tiles/large_decor'),
-            'Spawner' : Load_IMGS('tiles/spawners')
+            'Spawner' : Load_IMGS('tiles/spawners'),
+            'Boss' : Load_IMGS('tiles/boss')
         }
 
         self.Tilemap = Titlemap(self.assets)

@@ -1,6 +1,7 @@
 import pygame
 import random, math
 from Scripts.Particles import Particles
+from Scripts.Health_pack import Health
 
 pygame.init()
 
@@ -98,6 +99,22 @@ class Pl_Pro(Projectiles):
                 self.kill = True
                 self.Rect = self.rect()
                 return 
+            
+            for boss in self.game.Boss:
+                if self.rect().colliderect(boss.rect()):
+                    self.game.target = boss
+                    if boss.action != 'death':
+                        if random.randint(0, 100) <= 10:
+                            self.game.Health.append(Health(self.game.assets, self.rect().center, random.choice([100, 150, 50])))
+                            
+                        boss.set_action('hit')
+                        boss.Recover_frame = pygame.time.get_ticks()
+                        boss.DMG(50)
+                    hit_sound.play()
+                    self.kill = True
+                    self.Part_type = 1
+                    self.Rect = self.rect()
+                    return
             
             for en in self.game.enemies:
                 if self.rect().colliderect(en.rect()):

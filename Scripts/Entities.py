@@ -181,6 +181,7 @@ class Player(PhysicsEntity):
         self.Wall_slide = False
         self.reload_time = 800
         self.reloading = 0
+        self.invs = 1000
 
     def update(self, tilemap):
         super().update(tilemap)

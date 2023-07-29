@@ -5,12 +5,13 @@ import math
 from Settings import *
 from Scripts.Entities import PhysicsEntity, Player, Enemy
 from Scripts.Utils import Load_IMG
-from Scripts.Utils import Load_IMGS, Animation
+from Scripts.Utils import Load_IMGS, Animation, Sprite_sheet_IMGS
 from Scripts.Tilemap import Titlemap
 from Scripts.Clouds import Clouds
 from Scripts.Particles import Particles
 from Scripts.Projectiles import En_Pro, Pl_Pro
 from Scripts.Health_pack import Health
+import Scripts.Boss
 import random
 import os, os.path
 
@@ -40,21 +41,32 @@ class Game():
             'Gun' : Load_IMG('gun.png'),
             'Projectile': Load_IMG('projectile.png'),
             'Shuriken' : Load_IMG('shuriken.png'),
+            'Boss_1/attack' : Animation(Sprite_sheet_IMGS('entities/boss1/Attack.png', (59, 51), 81, 50, 150, 8), dur = 10),
+            'Boss_1/idle' : Animation(Sprite_sheet_IMGS('entities/boss1/Idle.png', (53,45), 36, 57, 150, 8 ), dur= 8),
+            'Boss_1/move' : Animation(Sprite_sheet_IMGS('entities/boss1/Move.png', (50, 35), 49, 66, 150, 8), dur= 8),
+            'Boss_1/death' : Animation(Sprite_sheet_IMGS('entities/boss1/Death.png', (53,51), 51, 56, 150, 5), dur= 8, loop= False),
+            'Boss_1/hit' : Animation(Sprite_sheet_IMGS('entities/boss1/Take Hit.png', (54, 45), 37, 55, 150, 4), dur= 8),
         }
 
         self.Particles = []
         self.Health = []
+        
 
         self.Player = Player((50,50), (8, 15), self.assets, self.Particles)
         self.Tilemap = Titlemap(self.assets)
         self.scroll = [0, 0]
         self.Clouds = Clouds(self.assets['Clouds'])
 
+
         dest = 'data/maps/' + str(level) + '.json'
         try:
             self.Tilemap.load(dest)
         except FileNotFoundError:
             pass
+        
+        self.Boss = []
+        for boss in self.Tilemap.extract([('Boss', 0)]):
+            self.Boss.append(Scripts.Boss.Boss_1(self, (boss['pos'][0], boss['pos'][1]), 'Boss_1', 'Evil Wizard'))
 
         self.Leaf_spawner = []
         for tree in self.Tilemap.extract([('Large_decor', 2)], True):
@@ -72,10 +84,20 @@ class Game():
         self.End = False
 
         self.transition = -30
+
+        if len(self.Boss):
+            self.target = self.Boss[0]
+
+    def Boss_health_name(self, screen, boss):
+        surf = Font.render(boss.name, True, "white")
+        screen.blit(surf, (280, 410))
+        Health_bar = 600 * boss.health / boss.health_max
+        Health_bar_rect = pygame.Rect(20, 440, Health_bar, 25)
+        pygame.draw.rect(screen, 'aquamarine3', Health_bar_rect)
         
     def Run(self):
 
-        if not len(self.enemies):
+        if not len(self.enemies) and not len(self.Boss):
             self.transition += 1
         if self.transition < 0:
             self.transition += 1
@@ -87,6 +109,7 @@ class Game():
         self.scroll[1] += (self.Player.rect().centery - Display.get_height()/2 - self.scroll[1]) / 20 # type: ignore
         render_scroll = (int(self.scroll[0]), int(self.scroll[1])) 
 
+
         for rect in self.Leaf_spawner:
             if random.random() * 20000 < rect.width * rect.height:
                 pos = (rect.x + random.random()* rect.width, rect.y + random.random() * rect.height)
@@ -96,6 +119,12 @@ class Game():
         self.Clouds.update()
 
         self.Tilemap.render(Display, offset = render_scroll)
+
+        for boss in self.Boss.copy():
+            boss.update()
+            boss.render(Display, offset= render_scroll)
+            if boss.Dead:
+                self.Boss.remove(boss)
 
         for enemy in self.enemies.copy():
             if enemy.update(self.Tilemap):
@@ -157,7 +186,7 @@ class Game():
             if kill:
                 self.Particles.remove(Particle)
 
-        if not len(self.enemies):
+        if not len(self.enemies) and not len(self.Boss):
             global level
             global max_level
             level = min(level + 1, max_level)
@@ -173,6 +202,7 @@ class Game():
 
 if __name__ == '__main__':
     pygame.init()
+    Font = pygame.font.Font('data/Pixeltype.ttf', 35)
     screen = pygame.display.set_mode((screen_w, screen_h))
     clock = pygame.time.Clock()
 
@@ -217,10 +247,14 @@ if __name__ == '__main__':
         
         if game.End:
             game = Game()
-            reset = False
 
         game.Run()
         Display2.blit(Display, (0,0))
         screen.blit(pygame.transform.scale(Display2, (screen_w, screen_h)), (0, 0))
         Health_display(game.Player.Health, screen)
+        try:
+            if game.target:
+                game.Boss_health_name(screen, game.target)
+        except:
+            pass
         pygame.display.flip()
