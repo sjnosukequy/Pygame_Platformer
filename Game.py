@@ -41,7 +41,7 @@ class Game():
             'Gun' : Load_IMG('gun.png'),
             'Projectile': Load_IMG('projectile.png'),
             'Shuriken' : Load_IMG('shuriken.png'),
-            'Boss_1/attack' : Animation(Sprite_sheet_IMGS('entities/boss1/Attack.png', (59, 51), 81, 50, 150, 8), dur = 10),
+            'Boss_1/attack1' : Animation(Sprite_sheet_IMGS('entities/boss1/Attack.png', (59, 51), 81, 50, 150, 8), dur = 10),
             'Boss_1/idle' : Animation(Sprite_sheet_IMGS('entities/boss1/Idle.png', (53,45), 36, 57, 150, 8 ), dur= 8),
             'Boss_1/move' : Animation(Sprite_sheet_IMGS('entities/boss1/Move.png', (50, 35), 49, 66, 150, 8), dur= 8),
             'Boss_1/death' : Animation(Sprite_sheet_IMGS('entities/boss1/Death.png', (53,51), 51, 56, 150, 5), dur= 8, loop= False),
@@ -66,7 +66,8 @@ class Game():
         
         self.Boss = []
         for boss in self.Tilemap.extract([('Boss', 0)]):
-            self.Boss.append(Scripts.Boss.Boss_1(self, (boss['pos'][0], boss['pos'][1]), 'Boss_1', 'Evil Wizard'))
+            if boss['variant'] == 0:
+                self.Boss.append(Scripts.Boss.Boss_1(self, (boss['pos'][0], boss['pos'][1]), 'Boss_1', 'Evil Wizard'))
 
         self.Leaf_spawner = []
         for tree in self.Tilemap.extract([('Large_decor', 2)], True):
@@ -230,6 +231,8 @@ if __name__ == '__main__':
     Display2 = pygame.Surface((320, 240))
     Display3 = pygame.Surface((320, 240))
 
+    Pause = False
+
     game = Game()
 
     while True:
@@ -244,17 +247,24 @@ if __name__ == '__main__':
             if event.type == pygame.QUIT:
                 pygame.quit()
                 sys.exit()
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_ESCAPE:
+                    Pause = not Pause
         
         if game.End:
             game = Game()
 
-        game.Run()
-        Display2.blit(Display, (0,0))
-        screen.blit(pygame.transform.scale(Display2, (screen_w, screen_h)), (0, 0))
-        Health_display(game.Player.Health, screen)
-        try:
-            if game.target:
-                game.Boss_health_name(screen, game.target)
-        except:
-            pass
+        if not Pause:
+            game.Run()
+            Display2.blit(Display, (0,0))
+            screen.blit(pygame.transform.scale(Display2, (screen_w, screen_h)), (0, 0))
+            Health_display(game.Player.Health, screen)
+            try:
+                if game.target:
+                    game.Boss_health_name(screen, game.target)
+            except:
+                pass
+        else:
+            text = Font.render('PAUSE',  True, 'white')
+            screen.blit(text, (screen_w/2 - 10, screen_h/2 - 10))
         pygame.display.flip()

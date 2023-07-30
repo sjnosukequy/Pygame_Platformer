@@ -104,7 +104,7 @@ class Pl_Pro(Projectiles):
                 if self.rect().colliderect(boss.rect()):
                     self.game.target = boss
                     if boss.action != 'death':
-                        if random.randint(0, 100) <= 10:
+                        if random.randint(0, 100) <= 5:
                             self.game.Health.append(Health(self.game.assets, self.rect().center, random.choice([100, 150, 50])))
                             
                         boss.set_action('hit')
